@@ -1,17 +1,19 @@
-from calendar import calendar
-from dotenv import dotenv_values
 from gcsa.google_calendar import GoogleCalendar
 from gcsa.calendar import Calendar
 import requests
 import config
-import os
+import sys
+from SQLStore import SQLStore
+from datetime import datetime
 
-ENV_VARS = dotenv_values(".env")
-
+# Initializing objects to be used within the script
 gc = GoogleCalendar(credentials_path=config.CALENDAR_API_CREDENTIAL_PATH,
         token_path=config.CALENDAR_API_TOKEN_PATH)
 
+db = SQLStore(config.SQLITE_DB_PATH + config.SQLITE_DB_NAME)
 
+
+# Helper functions
 def isCalendarIdPresent():
     try:
         if config.STOCK_RESULTS_CALENDAR_ID == "": return False
@@ -37,7 +39,27 @@ def loadScrips():
     pass
 
 def fetchResults():
-    results_resp = requests.get(config.BSE_RESULTS_URL)
+    try:
+        db_data = []
+        scrip_results = requests.get(config.BSE_RESULTS_URL).json()
+        for scrip in scrip_results:
+            db_data.append((
+                int(scrip["scrip_Code"]),
+                scrip["short_name"],
+                scrip["Long_Name"],
+                scrip["meeting_date"],
+                scrip["URL"],
+            ))
+            
+        db.insertIntoTable("stocks_db", 5, db_data)
+
+    except Exception as e:
+        print("Failed fetching data from BSE API!")
+        print(e)
+        sys.exit(-1)
+
+def createCalendarEvent(scrip):
+    pass
 
 def loadCalendar():
     try:
@@ -50,6 +72,7 @@ def loadCalendar():
                 calendar_id = createCalendar()
                 if calendar_id == -1:
                     print("Exception occured while creating calendar!")
+                    sys.exit(-1)
                 else:
                     print("Calendar created with ID: ", calendar_id)
                     print("Please add this calendar ID in config.py for future runs.")
@@ -58,20 +81,21 @@ def loadCalendar():
             elif choice == "n":
                 print("Calendar ID is needed to run this app, please add an existing calendar ID \
                     in config or create a new calendar.")
-                return -1
+                sys.exit(-1)
             else:
                 print("Invalid choice!")
-                return -1
+                sys.exit(-1)
             
     except:
         raise ValueError("Error loading calendar! Please check calendar id in your config.")
 
-def main():
-    # for calendar in gc.get_calendar_list():
-    #     print(calendar, calendar.id)
 
-    calendar = loadCalendar()
-    print(calendar, calendar.id)
+def main():
+    # calendar = loadCalendar()
+    # print(calendar, calendar.id)
+    
+    fetchResults()
+    db.testQuery()
 
 if __name__ == '__main__':
     main()

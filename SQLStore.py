@@ -1,4 +1,5 @@
 import sqlite3
+from typing import Set
 
 class SQLStore:
     '''
@@ -52,6 +53,20 @@ class SQLStore:
             print(e)
             return -1
 
+        try:    
+            self.conn.execute('''CREATE TABLE IF NOT EXISTS meta_db
+                (
+                    last_updated TIMESTAMP NOT NULL
+                );'''
+            )
+
+            print("Database meta_db initialized")
+
+        except Exception as e:
+            print("Initialization for meta_db failed!")
+            print(e)
+            return -1
+
     def insertIntoTable(self, table_name, num_cols, entries=[]) -> None:
         '''
             Inserts data into a given sqlite table.
@@ -78,5 +93,52 @@ class SQLStore:
             print(e)
             return -1
 
-        for row in cursor.execute("SELECT * FROM stocks_db LIMIT 10"):
+        for row in cursor.execute("SELECT * FROM stocks_db LIMIT 10;"):
             print(row)
+
+    def getScripDetails(self, scrip_code) -> Set:
+        '''
+            Returns Details for a script for SQLlite DB
+        ''' 
+        try:
+            cursor = self.conn.cursor()
+        except Exception as e:
+            print(e)
+            return -1
+
+        cursor.execute("SELECT * FROM stocks_db where short_name is '%s';" % scrip_code)
+        res = cursor.fetchall()
+        print(res)
+        return res[0]
+
+    def checkScripInPortfolioDB(self, scrip_code) -> bool:
+        try:
+            cursor = self.conn.cursor()
+        except Exception as e:
+            print(e)
+            return -1
+
+        cursor.execute("SELECT calendar_event_id FROM portfolio_db where short_name is '%s';" % scrip_code)
+        res = cursor.fetchall()
+        print(res)
+        if len(res) == 0:
+            return False
+        elif res[0] == "":
+            return False
+        else:
+            return True
+
+    def addScripInPortfolioDB(self, scrip: set, num_cols) -> None:
+        try:
+            cursor = self.conn.cursor()
+        except Exception as e:
+            print(e)
+            return -1
+
+        try:
+            sql_query_prefix = "INSERT INTO portfolio_db VALUES (" + (num_cols-1) * "?," + "?)"
+            cursor.execute(sql_query_prefix, scrip)
+            self.conn.commit()
+
+        except Exception as e:
+            print(e)

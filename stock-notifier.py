@@ -1,5 +1,7 @@
 from gcsa.google_calendar import GoogleCalendar
 from gcsa.calendar import Calendar
+from gcsa.event import Event
+
 import requests
 import config
 import sys
@@ -14,6 +16,11 @@ db = SQLStore(config.SQLITE_DB_PATH + config.SQLITE_DB_NAME)
 
 
 # Helper functions
+def getDateTime(date):
+    day, month_txt, year = date.split(' ')    
+    month_num = datetime.strptime(month_txt, '%b').month
+    return datetime(int(year), int(month_num), int(day))
+
 def isCalendarIdPresent():
     try:
         if config.STOCK_RESULTS_CALENDAR_ID == "": return False
@@ -36,7 +43,7 @@ def createCalendar():
         return -1
     
 def loadScrips():
-    pass
+    return ["LT", "GMM"]
 
 def fetchResults():
     try:
@@ -58,8 +65,22 @@ def fetchResults():
         print(e)
         sys.exit(-1)
 
-def createCalendarEvent(scrip):
-    pass
+def createCalendarEvent(scrip: list, calendar):
+    date = getDateTime(scrip[3])
+
+    event = Event('Results: ' + scrip[2],
+            description = 'Link to results: <a href="' + scrip[4] + '">Here</a>',
+            start = date,
+            minutes_before_popup_reminder = 86400
+        )
+    
+    try:
+        event_obj = gc.add_event(event, calendar_id=config.STOCK_RESULTS_CALENDAR_ID)
+        print("Event added with ID: " + event_obj.id)
+        return event_obj.id
+    except Exception as e:
+        print(e)
+        return -1
 
 def loadCalendar():
     try:
@@ -91,11 +112,15 @@ def loadCalendar():
 
 
 def main():
-    # calendar = loadCalendar()
+    calendar = loadCalendar()
     # print(calendar, calendar.id)
     
-    fetchResults()
-    db.testQuery()
+    # fetchResults()
+    # db.testQuery()
+    if not db.checkScripInPortfolioDB("GMM"):
+        print("Script not found, creating event!")
+        event_id = createCalendarEvent(db.getScripDetails("GMM"), calendar)
+        db.addScripInPortfolioDB((505255, "GMM", event_id), 3)
 
 if __name__ == '__main__':
     main()

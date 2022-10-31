@@ -21,11 +21,12 @@ class SQLStore:
         try:
             self.conn.execute('''CREATE TABLE IF NOT EXISTS stocks_db
                 (
-                    scrip_Code INT PRIMARY KEY NOT NULL,
+                    scrip_Code INT NOT NULL,
                     short_name TEXT NOT NULL,
                     Long_Name TEXT NOT NULL,
                     meeting_date TEXT NOT NULL,
-                    URL TEXT NOT NULL
+                    URL TEXT NOT NULL,
+                    PRIMARY KEY (scrip_Code, meeting_date)
                 );'''
             )
 
@@ -39,31 +40,19 @@ class SQLStore:
         try:    
             self.conn.execute('''CREATE TABLE IF NOT EXISTS portfolio_db
                 (
-                    scrip_Code INT PRIMARY KEY NOT NULL,
+                    scrip_Code INT NOT NULL,
                     short_name TEXT NOT NULL,
+                    meeting_date TEXT NOT NULL,
                     calendar_event_id TEXT,
+                    PRIMARY KEY (scrip_Code, meeting_date),
                     FOREIGN KEY(scrip_Code) REFERENCES stocks_db(scrip_Code)
                 );'''
             )
 
-            print("Database portfolio_db initialized")
+            print("Database portfolio_db initialized\n")
 
         except Exception as e:
             print("Initialization for portfolio_db failed!")
-            print(e)
-            return -1
-
-        try:    
-            self.conn.execute('''CREATE TABLE IF NOT EXISTS meta_db
-                (
-                    last_updated TIMESTAMP NOT NULL
-                );'''
-            )
-
-            print("Database meta_db initialized")
-
-        except Exception as e:
-            print("Initialization for meta_db failed!")
             print(e)
             return -1
 
@@ -74,8 +63,7 @@ class SQLStore:
         '''
         try:
             cursor = self.conn.cursor()
-            sql_query_prefix = "INSERT INTO " + table_name + " VALUES " + "(" + (num_cols-1) * "?," + "?)"
-            print(sql_query_prefix)
+            sql_query_prefix = "INSERT or REPLACE INTO " + table_name + " VALUES " + "(" + (num_cols-1) * "?," + "?)"
             cursor.executemany(sql_query_prefix, entries)
             self.conn.commit()
 
@@ -93,8 +81,9 @@ class SQLStore:
             print(e)
             return -1
 
-        for row in cursor.execute("SELECT * FROM stocks_db LIMIT 10;"):
+        for row in cursor.execute("SELECT * FROM portfolio_db LIMIT 10;"):
             print(row)
+
 
     def getScripDetails(self, scrip_code) -> Set:
         '''
@@ -108,19 +97,20 @@ class SQLStore:
 
         cursor.execute("SELECT * FROM stocks_db where short_name is '%s';" % scrip_code)
         res = cursor.fetchall()
-        print(res)
+        # print(res)
         return res[0]
 
-    def checkScripInPortfolioDB(self, scrip_code) -> bool:
+    def checkScripInPortfolioDB(self, scrip_code, event_date) -> bool:
         try:
             cursor = self.conn.cursor()
         except Exception as e:
             print(e)
             return -1
 
-        cursor.execute("SELECT calendar_event_id FROM portfolio_db where short_name is '%s';" % scrip_code)
+        cursor.execute("SELECT calendar_event_id FROM portfolio_db where \
+            short_name is '%s' and meeting_date is '%s';" % (scrip_code, event_date))
         res = cursor.fetchall()
-        print(res)
+        # print(res)
         if len(res) == 0:
             return False
         elif res[0] == "":
@@ -128,7 +118,7 @@ class SQLStore:
         else:
             return True
 
-    def addScripInPortfolioDB(self, scrip: set, num_cols) -> None:
+    def addScripInPortfolioDB(self, scrip: set) -> None:
         try:
             cursor = self.conn.cursor()
         except Exception as e:
@@ -136,7 +126,7 @@ class SQLStore:
             return -1
 
         try:
-            sql_query_prefix = "INSERT INTO portfolio_db VALUES (" + (num_cols-1) * "?," + "?)"
+            sql_query_prefix = "INSERT INTO portfolio_db VALUES (?,?,?,?)"
             cursor.execute(sql_query_prefix, scrip)
             self.conn.commit()
 

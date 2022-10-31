@@ -65,19 +65,20 @@ def fetchResults():
         print(e)
         sys.exit(-1)
 
-def createCalendarEvent(scrip: list, calendar):
+def createCalendarEvent(scrip: list):
     date = getDateTime(scrip[3])
 
     event = Event('Results: ' + scrip[2],
             description = 'Link to results: <a href="' + scrip[4] + '">Here</a>',
             start = date,
-            minutes_before_popup_reminder = 86400
+            minutes_before_popup_reminder = 150
         )
     
     try:
         event_obj = gc.add_event(event, calendar_id=config.STOCK_RESULTS_CALENDAR_ID)
-        print("Event added with ID: " + event_obj.id)
+        print("Event for scrip %s added with ID: %s" % (scrip[1], event_obj.id))
         return event_obj.id
+
     except Exception as e:
         print(e)
         return -1
@@ -110,17 +111,27 @@ def loadCalendar():
     except:
         raise ValueError("Error loading calendar! Please check calendar id in your config.")
 
+def updateCalendar(scrips: list, calendar: Calendar):
+    for scrip in scrips:
+        scrip_details = db.getScripDetails(scrip)
+        
+        # currently checking with short_name and meeting_date
+        if not db.checkScripInPortfolioDB(scrip_details[1], scrip_details[3]):
+            print("Event for scrip: %s not found, creating event!" % scrip_details[1])
+            event_id = createCalendarEvent(scrip_details)
+            db.addScripInPortfolioDB((scrip_details[0], scrip_details[1], \
+                scrip_details[3], event_id))
+        else:
+            print("Event for scrip %s exists!" % scrip_details[1])
 
 def main():
     calendar = loadCalendar()
-    # print(calendar, calendar.id)
     
-    # fetchResults()
-    # db.testQuery()
-    if not db.checkScripInPortfolioDB("GMM"):
-        print("Script not found, creating event!")
-        event_id = createCalendarEvent(db.getScripDetails("GMM"), calendar)
-        db.addScripInPortfolioDB((505255, "GMM", event_id), 3)
+    # fetch latest results
+    fetchResults()
+    
+    #update result events in calendara
+    updateCalendar(loadScrips(), calendar)
 
 if __name__ == '__main__':
     main()

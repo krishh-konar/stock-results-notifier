@@ -145,9 +145,10 @@ class SQLStore:
             sql_query_prefix = 'SELECT scrip_Code as "Scrip Code", \
                 short_name as "Scrip Ticker", \
                 Long_Name as "Scrip Name" FROM stocks_db \
-                WHERE Long_Name like ? COLLATE NOCASE;'
+                WHERE Long_Name like ? COLLATE NOCASE or \
+                short_name like ? COLLATE NOCASE;'
 
-            cursor.execute(sql_query_prefix, ['%'+name+'%'])
+            cursor.execute(sql_query_prefix, ['%'+name+'%', '%'+name+'%'])
             table = from_db_cursor(cursor)
             print(table)
 

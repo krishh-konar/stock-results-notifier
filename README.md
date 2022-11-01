@@ -43,5 +43,30 @@ Once credentials are downloaded and stored, update `CALENDAR_API_CREDENTIAL_PATH
 * Run the script.
 
 ```
-    python stock-notifier.py
+$ python stock-notifier.py --create
+
+Database stocks_db initialized
+Database portfolio_db initialized
+
+Event for scrip: LT not found, creating event!
+Event for scrip LT added with ID: bvel633ve2d1naau4e1gugga4s
+```
+
+* If you aren't sure what the ticker symbol is supposed to be, you can use the `--search` flag to find out the Ticker.
+
+```
+$ python stock-notifier.py --search tata
+
+Database stocks_db initialized
+Database portfolio_db initialized
+
++------------+--------------+--------------------------------------+
+| Scrip Code | Scrip Ticker |              Scrip Name              |
++------------+--------------+--------------------------------------+
+|   500470   |  TATASTEEL   |           TATA STEEL LTD.            |
+|   501301   |  TATAINVEST  |   TATA INVESTMENT CORPORATION LTD.   |
+|   532371   |     TTML     | TATA TELESERVICES (MAHARASHTRA) LTD. |
+|   500570   |  TATAMOTORS  |           TATA MOTORS LTD.           |
+|   570001   |  TATAMTRDVR  |        Tata Motors  Ltd - DVR        |
++------------+--------------+--------------------------------------+
 ```

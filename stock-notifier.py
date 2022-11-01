@@ -7,13 +7,12 @@ import config
 import sys
 from SQLStore import SQLStore
 from datetime import datetime
+import argparse
+
 
 # Initializing objects to be used within the script
-gc = GoogleCalendar(credentials_path=config.CALENDAR_API_CREDENTIAL_PATH,
-        token_path=config.CALENDAR_API_TOKEN_PATH)
-
-db = SQLStore(config.SQLITE_DB_PATH + config.SQLITE_DB_NAME)
-
+gc = None
+db = None
 
 # Helper functions
 def getDateTime(date):
@@ -133,16 +132,40 @@ def updateCalendar(scrips: list, calendar: Calendar):
             print("Event for scrip %s exists!" % scrip_details[1])
 
 def main():
-    calendar = loadCalendar()
-    
-    # fetch latest results
-    fetchResults()
-    
-    # #update result events in calendara
-    updateCalendar(loadScrips(), calendar)
+    # add cli support for searching stock ticker details
+    parser = argparse.ArgumentParser(description="Add stock result notifications to your Google Calendar.")
+    parser.add_argument("-S", "--search", type=str, help="Stock Name/Symbol (regex match)", required = False)
+    parser.add_argument("-C", "--create", help="Create events", action='store_true', required = False)
+    args = parser.parse_args()
 
-    # search ticker if not sure
-    # db.findScripSymbol("GM")
+    # Setting global calendar and sqlite db objects
+    global gc, db
+    
+    if args.search is not None:
+        # search ticker if not sure
+        if db is None:
+            db = SQLStore(config.SQLITE_DB_PATH + config.SQLITE_DB_NAME)
+
+        db.findScripSymbol(args.search)
+
+    elif args.create:
+        if gc is None:
+            gc = GoogleCalendar(credentials_path=config.CALENDAR_API_CREDENTIAL_PATH,
+                token_path=config.CALENDAR_API_TOKEN_PATH)
+        
+        if db is None:
+            db = SQLStore(config.SQLITE_DB_PATH + config.SQLITE_DB_NAME)
+
+        calendar = loadCalendar()
+        
+        # fetch latest results
+        fetchResults()
+        
+        # #update result events in calendara
+        updateCalendar(loadScrips(), calendar)
+    else:
+        parser.print_help()
+
 
 if __name__ == '__main__':
     main()

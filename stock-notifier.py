@@ -43,7 +43,15 @@ def createCalendar():
         return -1
     
 def loadScrips():
-    return ["LT", "GMM"]
+    try:
+        with open(config.PORTFOLIO_LIST_PATH + config.PORTFOLIO_LIST_FILENAME) as f:
+            scrips = f.read().splitlines()
+            return scrips
+
+    except Exception as e:
+        print(e)
+        return []
+        
 
 def fetchResults():
     try:
@@ -130,8 +138,11 @@ def main():
     # fetch latest results
     fetchResults()
     
-    #update result events in calendara
+    # #update result events in calendara
     updateCalendar(loadScrips(), calendar)
+
+    # search ticker if not sure
+    # db.findScripSymbol("GM")
 
 if __name__ == '__main__':
     main()

@@ -1,5 +1,6 @@
 import sqlite3
 from typing import Set
+from prettytable import from_db_cursor
 
 class SQLStore:
     '''
@@ -129,6 +130,26 @@ class SQLStore:
             sql_query_prefix = "INSERT INTO portfolio_db VALUES (?,?,?,?)"
             cursor.execute(sql_query_prefix, scrip)
             self.conn.commit()
+
+        except Exception as e:
+            print(e)
+
+    def findScripSymbol(self, name):
+        try:
+            cursor = self.conn.cursor()
+        except Exception as e:
+            print(e)
+            return -1
+
+        try:
+            sql_query_prefix = 'SELECT scrip_Code as "Scrip Code", \
+                short_name as "Scrip Ticker", \
+                Long_Name as "Scrip Name" FROM stocks_db \
+                WHERE Long_Name like ? COLLATE NOCASE;'
+
+            cursor.execute(sql_query_prefix, ['%'+name+'%'])
+            table = from_db_cursor(cursor)
+            print(table)
 
         except Exception as e:
             print(e)

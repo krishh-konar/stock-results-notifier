@@ -22,12 +22,10 @@ class SQLStore:
         try:
             self.conn.execute('''CREATE TABLE IF NOT EXISTS stocks_db
                 (
-                    scrip_Code INT NOT NULL,
+                    scrip_Code INT PRIMARY KEY NOT NULL,
                     short_name TEXT NOT NULL,
                     Long_Name TEXT NOT NULL,
-                    meeting_date TEXT NOT NULL,
-                    URL TEXT NOT NULL,
-                    PRIMARY KEY (scrip_Code, meeting_date)
+                    Industry TEXT 
                 );'''
             )
 
@@ -35,6 +33,26 @@ class SQLStore:
 
         except Exception as e:
             print("Initialization for stocks_db failed!")
+            print(e)
+            return -1
+
+        try:
+            self.conn.execute('''CREATE TABLE IF NOT EXISTS results_db
+                (
+                    scrip_Code INT NOT NULL,
+                    short_name TEXT NOT NULL,
+                    Long_Name TEXT NOT NULL,
+                    meeting_date TEXT NOT NULL,
+                    URL TEXT NOT NULL,
+                    PRIMARY KEY (scrip_Code, meeting_date),
+                    FOREIGN KEY(scrip_Code) REFERENCES stocks_db(scrip_Code)
+                );'''
+            )
+
+            print("Database results_db initialized")
+
+        except Exception as e:
+            print("Initialization for results_db failed!")
             print(e)
             return -1
 
@@ -46,7 +64,7 @@ class SQLStore:
                     meeting_date TEXT NOT NULL,
                     calendar_event_id TEXT,
                     PRIMARY KEY (scrip_Code, meeting_date),
-                    FOREIGN KEY(scrip_Code) REFERENCES stocks_db(scrip_Code)
+                    FOREIGN KEY(scrip_Code) REFERENCES results_db(scrip_Code)
                 );'''
             )
 
@@ -82,7 +100,7 @@ class SQLStore:
             print(e)
             return -1
 
-        for row in cursor.execute("SELECT * FROM portfolio_db LIMIT 10;"):
+        for row in cursor.execute("SELECT * FROM results_db LIMIT 10;"):
             print(row)
 
 
@@ -96,10 +114,13 @@ class SQLStore:
             print(e)
             return -1
 
-        cursor.execute("SELECT * FROM stocks_db where short_name is '%s';" % scrip_code)
+        cursor.execute("SELECT * FROM results_db where short_name is '%s';" % scrip_code)
         res = cursor.fetchall()
-        # print(res)
-        return res[0]
+
+        try:
+            return res[0]
+        except:
+            return None
 
     def checkScripInPortfolioDB(self, scrip_code, event_date) -> bool:
         try:

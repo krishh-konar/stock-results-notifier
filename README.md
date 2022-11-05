@@ -36,6 +36,8 @@ Once credentials are downloaded and stored, update `CALENDAR_API_CREDENTIAL_PATH
 
 * Edit the `config.py` file and add `CALENDAR_API_CREDENTIAL_PATH` and `CALENDAR_API_TOKEN_PATH` from the previous step and save.
 
+* If its the first time / its been a while since you ran this script, run `python stock-notifier.py --update-stocks-db` to create/update the databse with latest scrips (Especially applicable for new IPOs that have been listed recently).
+
 * Add `STOCK_RESULTS_CALENDAR_ID` if you already have a dedicated calendar for saving these result events. If not added, the app will ask to create one for you.
 
 * Add ticker symbols for all the stocks you want to create events for in `portfolio_stocks.txt`, one stock per line.
@@ -43,7 +45,7 @@ Once credentials are downloaded and stored, update `CALENDAR_API_CREDENTIAL_PATH
 * Run the script.
 
 ```
-$ python stock-notifier.py --create
+$ python stock-notifier.py --create-events
 
 Database stocks_db initialized
 Database portfolio_db initialized

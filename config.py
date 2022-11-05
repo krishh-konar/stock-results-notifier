@@ -4,6 +4,7 @@ CALENDAR_API_TOKEN_PATH="<credentials_path>/token.pickle"
 
 # Other Configuration
 BSE_RESULTS_URL = "https://api.bseindia.com/BseIndiaAPI/api/Corpforthresults/w"
+BSE_STOCKS_DATA_URL = "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w?&segment=Equity&status=Active"
 STOCK_RESULTS_CALENDAR_ID=""
 
 # sqlite3 configuration
